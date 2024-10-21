@@ -161,7 +161,7 @@ def import_from_path(
                 sys.modules.pop(mod_name, None)
                 mod_name, _, _ = mod_name.rpartition(".")
 
-        *package_names, module_name = module_name.split(".")
+        *package_names, _ = module_name.split(".")
 
         # I want this to work even if the folder names don't match the package names. Since the user
         # told us to import this as "foo.bar", that's what we're gonna do. So start at the given
