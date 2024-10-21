@@ -12,10 +12,7 @@ repository = "https://github.com/Aran-Fey/path-imports"
 
 [tool.rye]
 managed = true
-dev-dependencies = [
-    "pytest~=8.2.1",
-    "pyfakefs>=5.7.1",
-]
+dev-dependencies = ["pytest~=8.2.1", "pyfakefs>=5.7.1"]
 
 [build-system]
 requires = ["hatchling"]

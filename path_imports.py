@@ -1,4 +1,7 @@
-__version__ = "1.0"
+from __future__ import annotations
+
+
+__version__ = "1.1"
 
 
 import importlib.machinery
@@ -6,13 +9,20 @@ import importlib.util
 import os
 import sys
 import types
+import typing as t
 from pathlib import Path
+
+try:
+    from importlib.machinery import NamespaceLoader
+except ImportError:
+    from importlib._bootstrap_external import _NamespaceLoader as NamespaceLoader
 
 
 __all__ = [
     "import_from_path",
     "import_from_directory",
     "find_module_location",
+    "create_namespace_package",
 ]
 
 
@@ -199,6 +209,20 @@ def _import_file(path: Path, name: str) -> types.ModuleType:
             " (`importlib.util.spec_from_file_location` returned `None`.)"
         )
 
+    return _module_from_spec(spec)
+
+
+def _import_folder(path: Path, name: str) -> types.ModuleType:
+    init_py_path = path / "__init__.py"
+
+    if init_py_path.is_file():
+        return _import_file(init_py_path, name)
+
+    # If there's no __init__.py, create a namespace package
+    return create_namespace_package(name, [path])
+
+
+def _module_from_spec(spec: importlib.machinery.ModuleSpec) -> types.ModuleType:
     if spec.loader is None:
         raise ImportError(
             "The module could not be loaded for an unknown reason."
@@ -208,15 +232,30 @@ def _import_file(path: Path, name: str) -> types.ModuleType:
 
     module = importlib.util.module_from_spec(spec)
 
-    sys.modules[name] = module
+    sys.modules[spec.name] = module
     try:
         spec.loader.exec_module(module)
     except Exception as error:
-        del sys.modules[name]
-        raise ImportError from error
+        del sys.modules[spec.name]
+
+        raise ImportError(
+            f"An exception was raised during execution of the module code: {type(error)} {error}"
+        ) from error
 
     return module
 
 
-def _import_folder(path: Path, name: str) -> types.ModuleType:
-    return _import_file(path / "__init__.py", name)
+def create_namespace_package(
+    module_name: str, directories: t.Iterable[str | os.PathLike]
+) -> types.ModuleType:
+    submodule_search_locations = [os.fspath(directory) for directory in directories]
+
+    path_finder = importlib.machinery.PathFinder._get_spec  # type: ignore
+    loader = NamespaceLoader(module_name, submodule_search_locations, path_finder)
+
+    spec = importlib.util.spec_from_loader(module_name, loader)
+    assert spec is not None
+
+    spec.submodule_search_locations = submodule_search_locations
+
+    return _module_from_spec(spec)
