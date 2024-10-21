@@ -61,6 +61,11 @@ def find_module_location(
             if spec is not None:
                 return file_path
 
+        # Finally, check for a directory with no __init__.py
+        module_location = parent_directory / module_name
+        if module_location.is_dir():
+            return module_location
+
     return None
 
 
