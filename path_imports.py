@@ -263,4 +263,7 @@ def create_namespace_package(
 
     spec.submodule_search_locations = submodule_search_locations
 
-    return _module_from_spec(spec)
+    package = _module_from_spec(spec)
+    package.__file__ = None
+
+    return package
