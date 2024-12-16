@@ -202,8 +202,8 @@ def _import_file(path: Path, name: str) -> types.ModuleType:
             return module
 
         raise ImportError(
-            f"The file {path} cannot be imported because a module named"
-            f" {name!r} already exists."
+            f"The file {path} cannot be imported because a module named {name!r}"
+            f" already exists. (The path of that module is {module.__file__!r}.)"
         )
 
     spec = importlib.util.spec_from_file_location(name, path)
